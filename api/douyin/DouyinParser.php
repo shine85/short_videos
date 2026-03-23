@@ -13,6 +13,7 @@ class DouyinParser
     private $headers;
     private $cookie;
     private $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    private $shareUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1';
 
     public function __construct()
     {
@@ -185,8 +186,11 @@ class DouyinParser
 
         // 使用 dylive.php 中的 API 接口方式获取数据 (通常比页面解析更稳定)
         // 注意：这里需要有效的 Cookie
-        $apiUrl = 'https://www.douyin.com/user/self?modal_id=' . $id . '&showTab=like';
-        $response = $this->request($apiUrl);
+        $apiUrl = $this->buildShareUrl($url, $id);
+        $response = $this->request($apiUrl, [
+            'User-Agent: ' . $this->shareUserAgent,
+            'Referer: https://www.iesdouyin.com/'
+        ]);
         if (!$response) {
             return $this->output(500, '请求失败');
         }
@@ -202,6 +206,19 @@ class DouyinParser
     /**
      * 提取并解析 JSON 数据
      */
+    private function buildShareUrl($url, $id)
+    {
+        if (strpos($url, '/note/') !== false || strpos($url, '/share/note/') !== false) {
+            return 'https://www.iesdouyin.com/share/note/' . $id;
+        }
+
+        if (strpos($url, '/share/slides/') !== false) {
+            return 'https://www.iesdouyin.com/share/slides/' . $id;
+        }
+
+        return 'https://www.iesdouyin.com/share/video/' . $id;
+    }
+
     private function extractJson($html)
     {
         $startStr = '<script id="RENDER_DATA" type="application/json">';

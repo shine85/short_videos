@@ -26,7 +26,8 @@ class KuaishouSpider
     public function analyze(string $url): array
     {
         // 1. 获取重定向后的URL
-        $redirectUrl = $this->getRedirectedUrl($url);
+        [$contentType, $contentId] = $this->extractContentIdAndType($url);
+        $redirectUrl = !empty($contentId) ? $url : $this->getRedirectedUrl($url);
         if (empty($redirectUrl)) {
             return ['code' => 400, 'msg' => '无法获取有效链接'];
         }
@@ -197,7 +198,7 @@ class KuaishouSpider
             return null;
         }
 
-        $videoInfo = $apolloState['defaultClient'] ?? null;
+        $videoInfo = $apolloState['defaultClient'] ?? $apolloState;
         if (empty($videoInfo)) {
             return null;
         }
