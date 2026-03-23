@@ -13,11 +13,11 @@ class KuaishouSpider
     private $userAgent;
     private $timeout;
 
-    public function __construct($cookie, $userAgent, $timeout = 5000)
+    public function __construct($cookie, $userAgent, $timeout = 15)
     {
         $this->cookie = $cookie;
         $this->userAgent = $userAgent;
-        $this->timeout = $timeout;
+        $this->timeout = max(5, (int) $timeout);
     }
 
     /**
@@ -271,6 +271,7 @@ class KuaishouSpider
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_USERAGENT => $this->userAgent,
+            CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => $this->timeout
         ]);
         curl_exec($ch);
@@ -286,10 +287,12 @@ class KuaishouSpider
     {
         $headers = [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding: gzip, deflate, br',
             'Accept-Language: zh-CN,zh;q=0.9',
             'Cache-Control: no-cache',
             'Connection: keep-alive',
             'Pragma: no-cache',
+            'Referer: https://www.kuaishou.com/',
             'Sec-Fetch-Dest: document',
             'Sec-Fetch-Mode: navigate',
             'Sec-Fetch-Site: none',
@@ -308,7 +311,9 @@ class KuaishouSpider
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_AUTOREFERER => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_ENCODING => '',
             CURLOPT_USERAGENT => $this->userAgent,
             CURLOPT_HTTPHEADER => $headers
         ]);
