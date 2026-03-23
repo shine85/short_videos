@@ -1,151 +1,185 @@
 <?php
 /**
-*@Author: JH-Ahua
-*@CreateTime: 2025/8/6 上午12:56
-*@email: admin@bugpk.com
-*@blog: www.jiuhunwl.cn
-*@Api: api.bugpk.com
-*@tip: 短视频聚合解析
-*/
+ * 聚合短视频解析入口
+ */
+
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=utf-8');
 
-// 输入验证与过滤
-$url = $_REQUEST['url'] ?? null;
-$url = trim($url ?? '');
+const SV1_JSON_OPTIONS = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+const SV1_DEFAULT_BASE_URL = 'https://api2.jumh989.gq';
+const SV1_REQUEST_TIMEOUT = 30;
 
-// 检查URL是否为空或无效
-if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
-    echo json_encode([
+$url = getInputUrl();
+if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+    respond([
         'code' => 400,
         'msg' => '请输入有效的链接'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    ], 400);
 }
 
-// 平台配置：统一管理匹配关键词和API地址
 $platforms = [
-    'douyin' => [
+    [
         'keywords' => ['douyin'],
-        'api_url' => 'https://api.bugpk.com/api/douyin?url='
+        'path' => '/api/douyin/douyin.php'
     ],
-    'kuaishou' => [
+    [
         'keywords' => ['kuaishou'],
-        'api_url' => 'https://api.bugpk.com/api/ksjx?url='
+        'path' => '/api/kuaishou/ksjx.php'
     ],
-    'weishi' => [
-        'keywords' => ['weishi'],
-        'api_url' => 'https://api.bugpk.com/api/weishi?url='
-    ],
-    'bilibili' => [
+    [
         'keywords' => ['bilibili'],
-        'api_url' => 'https://api.bugpk.com/api/bilibili?url='
+        'path' => '/api/bilibili/index.php'
     ],
-    'pipixia' => [
+    [
         'keywords' => ['pipix'],
-        'api_url' => 'https://api.bugpk.com/api/pipixia?url='
+        'path' => '/api/ppxia.php'
     ],
-    'pipigx' => [
+    [
         'keywords' => ['ippzone', 'pipigx'],
-        'api_url' => 'https://api.bugpk.com/api/pipigx?url='
+        'path' => '/api/pipigx.php'
     ],
-    'weibo' => [
+    [
         'keywords' => ['weibo'],
-        'api_url' => 'https://api.bugpk.com/api/weibo?url='
+        'path' => '/api/weibo.php'
     ],
-    'xhs' => [
+    [
         'keywords' => ['xhs', 'xiaohongshu'],
-        'api_url' => 'https://api.bugpk.com/api/xhsjx?url='
+        'path' => '/api/xiaohongshu/xhsjx.php'
     ]
 ];
 
-// 查找匹配的平台
-$matchedPlatform = null;
-$lowerUrl = strtolower($url);
-
-foreach ($platforms as $platform => $config) {
-    foreach ($config['keywords'] as $keyword) {
-        if (strpos($lowerUrl, $keyword) !== false) {
-            $matchedPlatform = $config;
-            break 2; // 找到匹配项，跳出双层循环
-        }
-    }
-}
-
-// 处理请求
-if ($matchedPlatform) {
-    $apiUrl = $matchedPlatform['api_url'] . urlencode($url);
-    $response = requestUrl($apiUrl);
-
-    if ($response !== false) {
-        // 确保返回的是JSON格式
-        if (isValidJson($response)) {
-            echo $response;
-        } else {
-            echo json_encode([
-                'code' => 500,
-                'msg' => '接口返回格式不正确',
-                'data' => $response
-            ], JSON_UNESCAPED_UNICODE);
-        }
-    } else {
-        echo json_encode([
-            'code' => 500,
-            'msg' => '请求接口失败'
-        ], JSON_UNESCAPED_UNICODE);
-    }
-} else {
-    echo json_encode([
+$matchedPlatform = matchPlatform($url, $platforms);
+if ($matchedPlatform === null) {
+    respond([
         'code' => 201,
         'msg' => '不支持您输入的链接平台'
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
 }
-function requestUrl($url, $method = 'GET', $data = [])
+
+$apiUrl = buildBaseUrl() . $matchedPlatform['path'] . '?url=' . urlencode($url);
+$response = requestUrl($apiUrl);
+
+if ($response['ok'] && isValidJson($response['body'])) {
+    echo $response['body'];
+    exit;
+}
+
+$errorData = [
+    'code' => 500,
+    'msg' => $response['ok'] ? '接口返回格式不正确' : '请求接口失败'
+];
+
+if ($response['http_code'] > 0) {
+    $errorData['http_code'] = $response['http_code'];
+}
+
+if ($response['error'] !== '') {
+    $errorData['error'] = $response['error'];
+}
+
+if ($response['body'] !== '') {
+    $errorData['data'] = limitString($response['body']);
+}
+
+respond($errorData, 500);
+
+function getInputUrl()
 {
-    // 初始化cURL
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        return trim((string) ($_POST['url'] ?? ''));
+    }
+
+    $queryString = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    $urlParamPos = strpos($queryString, 'url=');
+    if ($urlParamPos !== false) {
+        return trim(urldecode(substr($queryString, $urlParamPos + 4)));
+    }
+
+    return trim((string) ($_GET['url'] ?? ''));
+}
+
+function matchPlatform($url, array $platforms)
+{
+    $lowerUrl = strtolower($url);
+    foreach ($platforms as $platform) {
+        foreach ($platform['keywords'] as $keyword) {
+            if (strpos($lowerUrl, $keyword) !== false) {
+                return $platform;
+            }
+        }
+    }
+
+    return null;
+}
+
+function buildBaseUrl()
+{
+    $fallback = parse_url(SV1_DEFAULT_BASE_URL);
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        ? 'https'
+        : (string) ($_SERVER['REQUEST_SCHEME'] ?? ($fallback['scheme'] ?? 'https'));
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? ($fallback['host'] ?? 'api2.jumh989.gq'));
+
+    return $scheme . '://' . $host;
+}
+
+function requestUrl($url)
+{
     $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => SV1_REQUEST_TIMEOUT,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_ENCODING => '',
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    ]);
 
-    // 设置URL
-    curl_setopt($ch, CURLOPT_URL, $url);
+    $body = curl_exec($ch);
+    $error = '';
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    // 设置请求方法
-    if (strtoupper($method) === 'POST' && !empty($data)) {
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    if ($body === false) {
+        $error = curl_error($ch);
+        $body = '';
     }
 
-    // 设置超时时间
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
-    // 不验证SSL证书（生产环境建议开启验证）
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-    // 返回响应内容而不直接输出
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    // 执行请求并获取响应
-    $response = curl_exec($ch);
-
-    // 检查是否有错误
-    if (curl_errno($ch)) {
-        error_log('请求错误: ' . curl_error($ch));
-        $response = false;
-    }
-
-    // 关闭cURL资源
     curl_close($ch);
 
-    return $response;
+    return [
+        'ok' => $error === '' && $httpCode < 400,
+        'body' => (string) $body,
+        'http_code' => $httpCode,
+        'error' => $error
+    ];
 }
 
-/**
- * 验证字符串是否为有效的JSON
- * @param string $string 待验证的字符串
- * @return bool 是否为有效JSON
- */
 function isValidJson($string)
 {
+    if ($string === '') {
+        return false;
+    }
+
     json_decode($string);
     return json_last_error() === JSON_ERROR_NONE;
 }
-?>
+
+function limitString($value, $limit = 500)
+{
+    if (strlen($value) <= $limit) {
+        return $value;
+    }
+
+    return substr($value, 0, $limit) . '...';
+}
+
+function respond(array $data, $statusCode = 200)
+{
+    http_response_code($statusCode);
+    echo json_encode($data, SV1_JSON_OPTIONS);
+    exit;
+}

@@ -1,124 +1,190 @@
 <?php
 /**
-*@Author: JH-Ahua
-*@CreateTime: 2025/8/6 上午12:59
-*@email: admin@bugpk.com
-*@blog: www.jiuhunwl.cn
-*@Api: api.bugpk.com
-*@tip: 短视频去水印聚合解析【单接口版】
-*/
+ * 聚合短视频解析入口（单接口版）
+ */
 
-// 设置跨域和响应类型
-header("Access-Control-Allow-Origin: *");
+header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=utf-8');
 
-/**
- * 解析短视频链接
- *
- * @param string $url 要解析的短视频链接
- * @return void
- */
-function short_videos($url) {
-    // 验证URL有效性
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        outputJson(['error' => '请提供有效的URL参数', 'Auther' => 'BugPk', 'website' => 'https://api.bugpk.com/'], 400);
-    }
+const SV2_JSON_OPTIONS = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+const SV2_DEFAULT_BASE_URL = 'https://api2.jumh989.gq';
+const SV2_REQUEST_TIMEOUT = 30;
 
-    // 定义API配置
-    $apiConfig = [
-        'base_url' => 'https://api.bugpk.com/api/short_videos',
-        'timeout' => 30, // 超时时间(秒)
-        'ssl_verify' => false // 生产环境建议开启SSL验证
-    ];
-
-    // 构建完整请求URL
-    $requestUrl = $apiConfig['base_url'] . '?url=' . urlencode($url);
-
-    // 执行请求
-    $response = curlRequest($requestUrl, $apiConfig['timeout'], $apiConfig['ssl_verify']);
-
-    if ($response === false) {
-        outputJson(['error' => '接口请求失败', 'Auther' => 'BugPk', 'website' => 'https://api.bugpk.com/'], 500);
-    }
-
-    // 解析JSON响应
-    $decodedResponse = json_decode($response, true);
-
-    if (json_last_error() === JSON_ERROR_NONE) {
-        outputJson($decodedResponse);
-    } else {
-        outputJson([
-            'error' => '接口返回格式错误',
-            'details' => json_last_error_msg(),
-            'Auther' => 'BugPk',
-            'website' => 'https://api.bugpk.com/'
-        ], 500);
-    }
+$url = getInputUrl();
+if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+    outputJson([
+        'error' => '请提供有效的URL参数',
+        'Auther' => 'BugPk',
+        'website' => SV2_DEFAULT_BASE_URL . '/'
+    ], 400);
 }
 
-/**
- * 发送cURL请求
- *
- * @param string $url 请求URL
- * @param int $timeout 超时时间(秒)
- * @param bool $sslVerify 是否验证SSL证书
- * @return string|false 响应内容或false
- */
-function curlRequest($url, $timeout = 30, $sslVerify = false) {
-    $ch = curl_init($url);
+$platforms = [
+    [
+        'keywords' => ['douyin'],
+        'path' => '/api/douyin/douyin.php'
+    ],
+    [
+        'keywords' => ['kuaishou'],
+        'path' => '/api/kuaishou/ksjx.php'
+    ],
+    [
+        'keywords' => ['bilibili'],
+        'path' => '/api/bilibili/index.php'
+    ],
+    [
+        'keywords' => ['pipix'],
+        'path' => '/api/ppxia.php'
+    ],
+    [
+        'keywords' => ['ippzone', 'pipigx'],
+        'path' => '/api/pipigx.php'
+    ],
+    [
+        'keywords' => ['weibo'],
+        'path' => '/api/weibo.php'
+    ],
+    [
+        'keywords' => ['xhs', 'xiaohongshu'],
+        'path' => '/api/xiaohongshu/xhsjx.php'
+    ]
+];
 
-    // 设置cURL选项
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,    // 返回结果而非直接输出
-        CURLOPT_FOLLOWLOCATION => true,   // 跟随重定向
-        CURLOPT_SSL_VERIFYPEER => $sslVerify, // SSL证书验证
-        CURLOPT_SSL_VERIFYHOST => $sslVerify ? 2 : 0,
-        CURLOPT_TIMEOUT => $timeout,      // 超时时间
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-        CURLOPT_NOBODY => false
-    ]);
-
-    $response = curl_exec($ch);
-
-    // 记录错误信息
-    if(curl_errno($ch)) {
-        error_log('cURL Error [' . curl_errno($ch) . ']: ' . curl_error($ch));
-        $response = false;
-    }
-
-    curl_close($ch);
-    return $response;
+$matchedPlatform = matchPlatform($url, $platforms);
+if ($matchedPlatform === null) {
+    outputJson([
+        'error' => '暂不支持该链接平台',
+        'Auther' => 'BugPk',
+        'website' => SV2_DEFAULT_BASE_URL . '/'
+    ], 400);
 }
 
-/**
- * 输出JSON响应
- *
- * @param array $data 要输出的数据
- * @param int $statusCode HTTP状态码
- * @return void
- */
-function outputJson($data, $statusCode = 200) {
-    // 设置HTTP状态码
-    http_response_code($statusCode);
+$requestUrl = buildBaseUrl() . $matchedPlatform['path'] . '?url=' . urlencode($url);
+$response = curlRequest($requestUrl);
 
-    // 输出JSON
-    echo json_encode($data, 480);
+if ($response['ok'] && isValidJson($response['body'])) {
+    echo $response['body'];
     exit;
 }
 
-// 处理请求参数
-$url = null;
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $url = trim($_GET['url'] ?? '');
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $url = trim($_POST['url'] ?? '');
+$errorData = [
+    'error' => $response['ok'] ? '接口返回格式错误' : '接口请求失败',
+    'Auther' => 'BugPk',
+    'website' => SV2_DEFAULT_BASE_URL . '/'
+];
+
+if ($response['http_code'] > 0) {
+    $errorData['http_code'] = $response['http_code'];
 }
 
-// 验证参数是否存在
-if (empty($url)) {
-    outputJson(['error' => '必须提供url参数', 'Auther' => 'BugPk', 'website' => 'https://api.bugpk.com/'], 400);
+if ($response['error'] !== '') {
+    $errorData['details'] = $response['error'];
+} elseif ($response['ok']) {
+    $errorData['details'] = '上游接口返回了非 JSON 内容';
 }
 
-// 执行解析
-short_videos($url);
-?>
+if ($response['body'] !== '') {
+    $errorData['data'] = limitString($response['body']);
+}
+
+outputJson($errorData, 500);
+
+function getInputUrl()
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        return trim((string) ($_POST['url'] ?? ''));
+    }
+
+    $queryString = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    $urlParamPos = strpos($queryString, 'url=');
+    if ($urlParamPos !== false) {
+        return trim(urldecode(substr($queryString, $urlParamPos + 4)));
+    }
+
+    return trim((string) ($_GET['url'] ?? ''));
+}
+
+function matchPlatform($url, array $platforms)
+{
+    $lowerUrl = strtolower($url);
+    foreach ($platforms as $platform) {
+        foreach ($platform['keywords'] as $keyword) {
+            if (strpos($lowerUrl, $keyword) !== false) {
+                return $platform;
+            }
+        }
+    }
+
+    return null;
+}
+
+function buildBaseUrl()
+{
+    $fallback = parse_url(SV2_DEFAULT_BASE_URL);
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        ? 'https'
+        : (string) ($_SERVER['REQUEST_SCHEME'] ?? ($fallback['scheme'] ?? 'https'));
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? ($fallback['host'] ?? 'api2.jumh989.gq'));
+
+    return $scheme . '://' . $host;
+}
+
+function curlRequest($url)
+{
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => SV2_REQUEST_TIMEOUT,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_ENCODING => '',
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    ]);
+
+    $body = curl_exec($ch);
+    $error = '';
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if ($body === false) {
+        $error = curl_error($ch);
+        $body = '';
+    }
+
+    curl_close($ch);
+
+    return [
+        'ok' => $error === '' && $httpCode < 400,
+        'body' => (string) $body,
+        'http_code' => $httpCode,
+        'error' => $error
+    ];
+}
+
+function isValidJson($string)
+{
+    if ($string === '') {
+        return false;
+    }
+
+    json_decode($string);
+    return json_last_error() === JSON_ERROR_NONE;
+}
+
+function limitString($value, $limit = 500)
+{
+    if (strlen($value) <= $limit) {
+        return $value;
+    }
+
+    return substr($value, 0, $limit) . '...';
+}
+
+function outputJson(array $data, $statusCode = 200)
+{
+    http_response_code($statusCode);
+    echo json_encode($data, SV2_JSON_OPTIONS);
+    exit;
+}
