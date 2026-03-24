@@ -1,13 +1,13 @@
-# 格式:
-# token|使用人|过期时间|备注
-# 说明:
-# 1. 一行一个 token
-# 2. 过期时间支持:
-#    - 2026-12-31
-#    - 2026-12-31 23:59:59
-#    - never / permanent / long-term
-# 3. 以 #、;、// 开头的行为注释
+# Format: token|owner|expires_at|remark
+# Expiry values:
+# never = no expiry
+# permanent = permanent
+# long-term = long term
+# You can also use an exact datetime, for example 2026-12-31 23:59:59
 
-main_token_example|self|never|main
-client_demo_token_001|clientA|2026-04-30 23:59:59|demo
-temp_test_token_002|test_box|2026-03-31|temporary
+awNmuGH2_8yM8s_ZwekfK3_Gf_Z83ev_2026|self|never|main account, never = no expiry
+client_demo_token_001|clientA|2026-04-30 23:59:59|demo only, auto expires
+temp_test_token_002|test_box|2026-03-31 23:59:59|temporary test, auto expires
+partner_long_token_003|partnerB|long-term|partner long-term use
+vip_user_token_004|vipClient|permanent|vip permanent use
+expired_test_token_999|test_expired|2025-12-31 23:59:59|expired token test
