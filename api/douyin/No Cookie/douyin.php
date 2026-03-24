@@ -7,8 +7,11 @@
  * @Api: api.bugpk.com
  * @tip: 抖音视频图集去水印解析
  */
+require_once dirname(__DIR__, 2) . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
 header('Content-type: application/json');
+svRequireApiToken();
 function douyin($url)
 {
 

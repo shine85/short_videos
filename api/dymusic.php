@@ -7,8 +7,11 @@
 *@Api: api.bugpk.com
 *@tip: 汽水音乐解析
 */
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
 header('Content-type: text/json;charset=utf-8');
+svRequireApiToken();
 $url = (isset($_GET['url'])) ? $_GET['url'] : '';
 $type = (isset($_GET['type'])) ? $_GET['type'] : 'json';
 if ($type !== '' && $url !== '') {

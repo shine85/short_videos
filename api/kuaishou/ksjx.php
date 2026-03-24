@@ -8,11 +8,14 @@
  * @tip: 快手链接图片/视频信息提取工具
  */
 
+require_once dirname(__DIR__) . '/common/ApiAuth.php';
 require_once "KuaishouSpider.php";
 
 // 跨域与响应头设置
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json; charset=utf-8');
+
+svRequireApiToken();
 
 // 配置
 define('USER_AGENT', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1 Edg/122.0.0.0');

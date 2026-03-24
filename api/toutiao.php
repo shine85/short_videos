@@ -7,8 +7,11 @@
  * @Api: api.bugpk.com
  * @tip: 今日头条去水印解析
  */
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
 header('Content-type: application/json');
+svRequireApiToken();
 function toutiao($url)
 {
 

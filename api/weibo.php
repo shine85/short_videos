@@ -7,7 +7,10 @@
 *@Api: api.bugpk.com
 *@tip: 微博短视频解析【官方接口】
 */
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
+svRequireApiToken();
 // 定义常量
 define('MAX_REDIRECTS', 5); // 最大重定向次数
 define('TIMEOUT', 15); // 请求超时时间(秒)

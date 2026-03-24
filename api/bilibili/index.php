@@ -8,11 +8,14 @@
  * @tip: bilibili作品视频&作品视频合集解析-新版
  */
 
+require_once dirname(__DIR__) . '/common/ApiAuth.php';
 require_once 'BilibiliParser.php';
 
 // Set headers
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json');
+
+svRequireApiToken();
 
 // Get URL parameter
 $url = isset($_GET['url']) ? $_GET['url'] : '';

@@ -3,6 +3,8 @@
  * 聚合短视频解析入口
  */
 
+require_once dirname(__DIR__) . '/api/common/ApiAuth.php';
+
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=utf-8');
 
@@ -10,6 +12,7 @@ const SV1_JSON_OPTIONS = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 const SV1_DEFAULT_BASE_URL = 'https://api2.jumh989.gq';
 const SV1_REQUEST_TIMEOUT = 30;
 
+$requestToken = svRequireApiToken();
 $url = getInputUrl();
 if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
     respond([
@@ -58,6 +61,7 @@ if ($matchedPlatform === null) {
 }
 
 $apiUrl = buildBaseUrl() . $matchedPlatform['path'] . '?url=' . urlencode($url);
+$apiUrl = svAppendTokenToUrl($apiUrl, $requestToken);
 $response = requestUrl($apiUrl);
 
 if ($response['ok'] && isValidJson($response['body'])) {

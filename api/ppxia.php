@@ -7,9 +7,12 @@
  * @Api: api.bugpk.com
  * @tip: 皮皮虾去水印解析
  */
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
 // 设置响应头为 JSON 格式
 header('content-type:application/json; charset=utf-8');
+svRequireApiToken();
 
 // 定义常量
 const MAX_REDIRECTS = 10;

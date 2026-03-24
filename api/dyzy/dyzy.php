@@ -7,7 +7,10 @@
  * @Api: api.bugpk.com
  * @tip: 抖音主页解析
  */
+require_once dirname(__DIR__) . '/common/ApiAuth.php';
+
 header('Content-Type: application/json; charset=utf-8');
+svRequireApiToken();
 // 关闭错误显示，避免破坏JSON格式
 error_reporting(E_ALL);
 ini_set('display_errors', 0);

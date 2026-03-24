@@ -7,8 +7,11 @@
 *@Api: api.bugpk.com
 *@tip: 微博短视频解析爬虫版
 */
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("Access-Control-Allow-Origin: *");
 header('content-type:application/json; charset=utf-8');
+svRequireApiToken();
 function weibo($url)
 {
     $proxyurl = 'https://api.bugpk.com/api/weibo?proxyurl=';

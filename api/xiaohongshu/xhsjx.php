@@ -8,10 +8,13 @@
  * @tip: 小红书解析统一接口
  */
 
+require_once dirname(__DIR__) . '/common/ApiAuth.php';
 require_once 'XiaohongshuParser.php';
 
 header("Access-Control-Allow-Origin: *");
 header('Content-type: application/json');
+
+svRequireApiToken();
 
 // 获取请求参数
 $url = null;

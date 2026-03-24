@@ -1,0 +1,13 @@
+# 格式:
+# token|使用人|过期时间|备注
+# 说明:
+# 1. 一行一个 token
+# 2. 过期时间支持:
+#    - 2026-12-31
+#    - 2026-12-31 23:59:59
+#    - never / permanent / long-term
+# 3. 以 #、;、// 开头的行为注释
+
+main_token_example|self|never|main
+client_demo_token_001|clientA|2026-04-30 23:59:59|demo
+temp_test_token_002|test_box|2026-03-31|temporary

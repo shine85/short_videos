@@ -8,7 +8,10 @@
 *@tip: 皮皮搞笑去水印解析
 */
 // 设置响应头为 JSON 格式，使用 UTF-8 编码
+require_once __DIR__ . '/common/ApiAuth.php';
+
 header("content-type:application/json; charset=utf-8");
+svRequireApiToken();
 
 /**
  * 格式化响应信息

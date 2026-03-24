@@ -9,10 +9,12 @@
  */
 //这里填写你的B站cookie(不填解析不到1080P以上) 格式为_uuid=XXXXX
 $cookie = '';
+require_once dirname(__DIR__) . '/common/ApiAuth.php';
 $headers = ['Content-type: application/json;charset=UTF-8'];
 $useragent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36';
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json');
+svRequireApiToken();
 $urls = isset($_GET['url']) ? $_GET['url'] : '';
 if (empty($urls)) {
     exit(json_encode(['code' => 201, 'msg' => '链接不能为空！'], 480));
