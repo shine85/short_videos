@@ -40,18 +40,16 @@ token|使用人|过期时间|备注
 
 ```text
 # 一行一个 token
-main_token_example|self|never|main
-client_demo_token_001|clientA|2026-04-30 23:59:59|demo
-temp_test_token_002|test_box|2026-03-31|temporary
+awNmuGH2_8yM8s_ZwekfK3_Gf_Z83ev_2026|老王自己|never|主账号长期使用
+client_demo_token_001|客户A|2026-04-30 23:59:59|演示专用，到期自动失效
+temp_test_token_002|测试机|2026-03-31 23:59:59|临时测试，到期自动失效
 ```
 
 过期时间支持:
 
+- `never`
 - `2026-12-31`
 - `2026-12-31 23:59:59`
-- `never`
-- `permanent`
-- `long-term`
 
 注释行支持:
 
@@ -213,6 +211,12 @@ curl "https://api2.jumh989.gq/api/bilibili/index.php?token=你的token&url=https
 - 缺少 token: 返回 `401` 和 `缺少token`
 - token 错误: 返回 `401` 和 `token错误`
 - token 过期: 返回 `401` 和 `token已过期`
+
+## 推荐规则
+
+- 不过期统一写 `never`
+- 需要失效控制时，直接写具体日期时间
+- `使用人` 和 `备注` 可以直接写中文，方便一眼看懂
 
 ## 建议
 

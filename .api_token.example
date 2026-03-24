@@ -1,13 +1,11 @@
-# Format: token|owner|expires_at|remark
-# Expiry values:
-# never = no expiry
-# permanent = permanent
-# long-term = long term
-# You can also use an exact datetime, for example 2026-12-31 23:59:59
+# 格式: token|使用人|过期时间|备注
+# 说明:
+# 1. 一行一个 token
+# 2. 过期时间只保留两种写法:
+#    - never = 不过期
+#    - 具体时间，例如 2026-12-31 23:59:59
+# 3. 以 #、;、// 开头的行为注释
 
-awNmuGH2_8yM8s_ZwekfK3_Gf_Z83ev_2026|self|never|main account, never = no expiry
-client_demo_token_001|clientA|2026-04-30 23:59:59|demo only, auto expires
-temp_test_token_002|test_box|2026-03-31 23:59:59|temporary test, auto expires
-partner_long_token_003|partnerB|long-term|partner long-term use
-vip_user_token_004|vipClient|permanent|vip permanent use
-expired_test_token_999|test_expired|2025-12-31 23:59:59|expired token test
+awNmuGH2_8yM8s_ZwekfK3_Gf_Z83ev_2026|Shine自己|never|主账号长期使用
+client_demo_token_001|客户A|2026-04-30 23:59:59|演示专用，到期自动失效
+expired_test_token_999|过期测试|2025-12-31 23:59:59|这个 token 应该返回 token 已过期
