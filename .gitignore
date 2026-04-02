@@ -1,2 +1,4 @@
 .api_token
 .well-known/
+www/.portal_token
+www/storage/*.json

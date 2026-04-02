@@ -1,9 +1,14 @@
 <?php
-require_once __DIR__ . '/common/ApiAuth.php';
-
+/**
+ * @Author: JH-Ahua
+ * @CreateTime: 2026/3/31 上午11:25
+ * @email: admin@bugpk.com
+ * @blog: www.jiuhunwl.cn
+ * @Api: api.bugpk.com
+ * @tip: 最右解析
+ */
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json; charset=utf-8');
-svRequireApiToken();
 
 /**
  * 构建统一格式的响应数组
@@ -52,7 +57,12 @@ function getRedirectUrl(string $url): ?string
         CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 5000,
+        CURLOPT_TIMEOUT => 12,
+        CURLOPT_CONNECTTIMEOUT => 4,
+        CURLOPT_NOSIGNAL => 1,
+        CURLOPT_LOW_SPEED_LIMIT => 256,
+        CURLOPT_LOW_SPEED_TIME => 6,
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     ]);
 
@@ -119,7 +129,12 @@ function curlRequest(string $url, ?array $headers = null, $data = null)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_AUTOREFERER => true,
-        CURLOPT_TIMEOUT => 5000,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_NOSIGNAL => 1,
+        CURLOPT_LOW_SPEED_LIMIT => 256,
+        CURLOPT_LOW_SPEED_TIME => 8,
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     ]);
 
@@ -188,9 +203,6 @@ if ($responseData === null) {
 }
 if ($responseData === null) {
     $vid = getParamFromUrlWithRedirect($url, 'vid');
-    if (empty($vid)) {
-        $responseData = outputJson(201, '找不到有效的vid参数（包括重定向后）');
-    }
 }
 
 // 调用API获取数据
@@ -221,7 +233,10 @@ if ($responseData === null) {
             $memberData = $postData['member'] ?? [];
             $videosData = $postData['videos'] ?? [];
             $imgsData = $postData['imgs'][0] ?? [];
-
+            $vid = $imgsData['id'];
+            if (empty($vid)) {
+                $responseData = outputJson(201, '找不到有效的vid参数（包括重定向后）');
+            }
             $json = [
                 'author' => $memberData['name'] ?? null,
                 'avatar' => $memberData['avatar_urls']['origin']['urls'][0] ?? null,
